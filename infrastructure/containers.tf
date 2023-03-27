@@ -11,7 +11,7 @@ module "ecs" {
 
 # Task Definition
 resource "aws_ecs_task_definition" "proxy_task" {
-  family                   =  "proxy"
+  family                   = "proxy"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = 1024
@@ -62,7 +62,7 @@ resource "aws_ecs_task_definition" "proxy_task" {
         },
         {
           name  = "S3_SERVER"
-          value = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name,"*","bucket")
+          value = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
         },
 
 
@@ -90,31 +90,6 @@ resource "aws_ecs_task_definition" "proxy_task" {
     }
   ])
 }
-
-
-# resource "aws_ecs_task_definition" "proxy_task" {
-#   family                   = "proxy"
-#   network_mode             = "awsvpc"
-#   requires_compatibilities = ["FARGATE"]
-#   cpu                      = 1024
-#   memory                   = 2048
-#   task_role_arn            = aws_iam_role.ecs_proxy_role.arn
-#   execution_role_arn       = aws_iam_role.ecs_proxy_role.arn
-#   container_definitions = jsonencode([
-#     {
-#       name      = "spa_proxy"
-#       image     = "${aws_ecr_repository.proxy_repo.repository_url}:latest"
-#       essential = true
-#       portMappings = [
-#         {
-#           containerPort = 80
-#           protocol      = "HTTP"
-#         }
-#       ]
-#     }
-#   ])
-# }
-
 
 # Role
 resource "aws_iam_role" "ecs_proxy_role" {
@@ -224,6 +199,41 @@ resource "aws_lb_listener" "proxy_listener" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.proxy.arn
+  }
+}
+
+resource "aws_lb_listener" "proxy_listener_https" {
+  load_balancer_arn = aws_lb.proxy_lb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.proxy.arn
+  }
+  certificate_arn = aws_acm_certificate.lb_cert.arn
+
+}
+
+resource "aws_acm_certificate" "lb_cert" {
+  private_key      = file("cert/sample-private-key.pem")
+  certificate_body = file("cert/sample-certificate.pem")
+}
+
+resource "aws_route53_zone" "privatezone" {
+  name = "samplesite.local"
+  vpc {
+    vpc_id = module.vpc.vpc_id
+  }
+}
+
+resource "aws_route53_record" "alb_record" {
+  zone_id = aws_route53_zone.privatezone.zone_id
+  name = "www"
+  type = "A"
+  alias {
+    name = aws_lb.proxy_lb.dns_name
+    zone_id = aws_lb.proxy_lb.zone_id
+    evaluate_target_health = true
   }
 }
 

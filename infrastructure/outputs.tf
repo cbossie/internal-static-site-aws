@@ -4,12 +4,12 @@ output "vpc_id" {
 }
 
 output "vpc_endpoints" {
-  value = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name,"*","bucket")
+  value       = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
   description = "VPC URL"
 }
 
 
 output "vpc_endpoint_id" {
-  value = aws_vpc_endpoint.s3_endpoint.id
+  value       = aws_vpc_endpoint.s3_endpoint.id
   description = "VPC Endpoint ID"
 }
