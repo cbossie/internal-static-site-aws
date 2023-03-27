@@ -3,7 +3,6 @@ locals {
   s3_service = "com.amazonaws.${var.region}.s3"
   cidr       = "10.0.0.0/16"
 
-
 }
 
 

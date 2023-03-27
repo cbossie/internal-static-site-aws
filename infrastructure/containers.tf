@@ -11,7 +11,7 @@ module "ecs" {
 
 # Task Definition
 resource "aws_ecs_task_definition" "proxy_task" {
-  family                   = "proxy"
+  family                   =  "proxy"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = 1024
@@ -20,8 +20,66 @@ resource "aws_ecs_task_definition" "proxy_task" {
   execution_role_arn       = aws_iam_role.ecs_proxy_role.arn
   container_definitions = jsonencode([
     {
-      name      = "spa_proxy"
-      image     = "${aws_ecr_repository.proxy_repo.repository_url}:latest"
+      name  = "spa_proxy"
+      image = "nginxinc/nginx-s3-gateway:latest"
+      environment = [
+        {
+          name  = "S3_BUCKET_NAME"
+          value = "${aws_s3_bucket.spa_bucket.id}"
+        },
+        {
+          name  = "PROVIDE_INDEX_PAGE"
+          value = "true"
+        },
+        {
+          name  = "S3_REGION"
+          value = var.region
+        },
+        {
+          name  = "S3_STYLE"
+          value = "default"
+        },
+        {
+          name  = "S3_SERVER_PORT"
+          value = "443"
+        },
+
+        {
+          name  = "S3_SERVER_PROTO"
+          value = "https"
+        },
+        {
+          name  = "AWS_SIGS_VERSION"
+          value = "4"
+        },
+        {
+          name  = "S3_DEBUG"
+          value = "true"
+        },
+        {
+          name  = "ALLOW_DIRECTORY_LIST"
+          value = "false"
+        },
+        {
+          name  = "S3_SERVER"
+          value = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name,"*","bucket")
+        },
+
+
+
+
+
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-create-group  = "true"
+          awslogs-group         = "nginx-logs"
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "s3"
+        }
+      }
+
       essential = true
       portMappings = [
         {
@@ -32,6 +90,30 @@ resource "aws_ecs_task_definition" "proxy_task" {
     }
   ])
 }
+
+
+# resource "aws_ecs_task_definition" "proxy_task" {
+#   family                   = "proxy"
+#   network_mode             = "awsvpc"
+#   requires_compatibilities = ["FARGATE"]
+#   cpu                      = 1024
+#   memory                   = 2048
+#   task_role_arn            = aws_iam_role.ecs_proxy_role.arn
+#   execution_role_arn       = aws_iam_role.ecs_proxy_role.arn
+#   container_definitions = jsonencode([
+#     {
+#       name      = "spa_proxy"
+#       image     = "${aws_ecr_repository.proxy_repo.repository_url}:latest"
+#       essential = true
+#       portMappings = [
+#         {
+#           containerPort = 80
+#           protocol      = "HTTP"
+#         }
+#       ]
+#     }
+#   ])
+# }
 
 
 # Role
@@ -88,7 +170,7 @@ resource "aws_ecs_service" "proxy_service" {
   name                 = "proxy-service"
   cluster              = module.ecs.cluster_id
   task_definition      = aws_ecs_task_definition.proxy_task.arn
-  desired_count        = 4
+  desired_count        = 1
   force_new_deployment = true
   network_configuration {
     security_groups  = [aws_security_group.all_vpc_sg.id]
@@ -128,7 +210,7 @@ resource "aws_lb_target_group" "proxy" {
   target_type = "ip"
 
   health_check {
-    path     = "/"
+    path     = "/index.html"
     protocol = "HTTP"
     interval = 60
   }
