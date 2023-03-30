@@ -228,11 +228,11 @@ resource "aws_route53_zone" "privatezone" {
 
 resource "aws_route53_record" "alb_record" {
   zone_id = aws_route53_zone.privatezone.zone_id
-  name = "www"
-  type = "A"
+  name    = "www"
+  type    = "A"
   alias {
-    name = aws_lb.proxy_lb.dns_name
-    zone_id = aws_lb.proxy_lb.zone_id
+    name                   = aws_lb.proxy_lb.dns_name
+    zone_id                = aws_lb.proxy_lb.zone_id
     evaluate_target_health = true
   }
 }
