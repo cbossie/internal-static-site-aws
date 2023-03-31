@@ -24,11 +24,17 @@ variable "region" {
 }
 
 variable "s3_interface_endpoint_id" {
-  type = string
+  type        = string
   description = "The VPC endpoint for S3 for this proxy."
 }
 
-variable "private_subnet_ids" {
-  type = list(string)
-  description = "The subnet IDs that the proxies will be launched into"
+variable "allow_http" {
+  type        = bool
+  description = "Whether to use the plain http backend"
+  default     = false
+}
+
+variable "private_zone_id" {
+  type        = string
+  description = "Route53 Private zone"
 }
