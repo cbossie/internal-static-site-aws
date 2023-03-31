@@ -45,9 +45,9 @@ resource "aws_s3_bucket" "spa_bucket" {
 }
 
 resource "aws_s3_object" "test_file" {
-  source = "${path.module}/assets/index.html"
+  source = "${path.module}/assets/hc.html"
   bucket = aws_s3_bucket.spa_bucket.id
-  key = "index.html"
+  key = "hc.html"
 }
 
 resource "aws_s3_bucket_policy" "vpce_policy" {
@@ -301,7 +301,7 @@ resource "aws_lb_target_group" "proxy" {
   target_type = "ip"
 
   health_check {
-    path     = "/index.html"
+    path     = "/hc.html"
     protocol = "HTTP"
     interval = 60
   }
