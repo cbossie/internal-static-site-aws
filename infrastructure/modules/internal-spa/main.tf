@@ -187,16 +187,13 @@ resource "aws_ecs_task_definition" "proxy_task" {
 resource "aws_security_group" "proxy_sg" {
   name_prefix = "${var.appid}-proxy"
   vpc_id      = var.vpc_id
-  ingress = [{
-    protocol    = -1
-    description = "Ingress to proxy"
-    from_port   = 0
-    self        = true
-    to_port     = 0
-    }, {
+
+  ingress = [
+ {
     protocol        = -1
     description     = "Ingress to proxy"
     from_port       = 0
+    self = true
     security_groups = [aws_security_group.lb_sg.id]
     to_port         = 0
   }]
@@ -279,7 +276,7 @@ resource "aws_lb_target_group" "proxy" {
 }
 
 resource "aws_route53_record" "alb_record" {
-  zone_id = aws_route53_zone.privatezone.zone_id
+  zone_id = var.private_zone_id
   name    = "www"
   type    = "A"
   alias {
