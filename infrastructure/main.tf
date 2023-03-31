@@ -96,7 +96,7 @@ module "spa_proxy" {
   vpc_id                   = module.vpc.vpc_id
   subnets                  = module.vpc.private_subnets
   certificate_arn          = aws_acm_certificate.lb_cert.arn
-  allow_http               = true
+  allow_http               = false
   region                   = var.region
   s3_interface_endpoint_id = aws_vpc_endpoint.s3_endpoint.id
   private_zone_id          = aws_route53_zone.privatezone.id

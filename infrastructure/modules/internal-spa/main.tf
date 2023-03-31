@@ -7,8 +7,9 @@ data "aws_vpc" "proxy_vpc" {
   id = var.vpc_id
 }
 
-resource "aws_ecr_repository" "proxy_repo" {
-  name = "${var.appid}-proxy-repo"
+locals {
+  task_family = "${var.appid}-task"
+  container_name = "${var.appid}-spa-proxy"
 }
 
 module "ecs_cluster" {
@@ -16,8 +17,37 @@ module "ecs_cluster" {
   cluster_name = "${var.appid}-proxy"
 }
 
+
+resource "aws_ecs_service" "proxy_service" {
+  launch_type          = "FARGATE"
+  name                 = "${var.appid}-proxy-service"
+  cluster              = module.ecs_cluster.cluster_id
+  task_definition      = aws_ecs_task_definition.proxy_task.arn
+  desired_count        = 3
+  force_new_deployment = true
+  network_configuration {
+    security_groups  = [aws_security_group.proxy_sg.id]
+    subnets          = var.subnets
+    assign_public_ip = false
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.proxy.arn
+    container_name   = local.container_name
+    container_port   = 80
+  }
+
+}
+
 resource "aws_s3_bucket" "spa_bucket" {
   bucket_prefix = var.appid
+  force_destroy = true
+}
+
+resource "aws_s3_object" "test_file" {
+  source = "${path.module}/assets/index.html"
+  bucket = aws_s3_bucket.spa_bucket.id
+  key = "index.html"
 }
 
 resource "aws_s3_bucket_policy" "vpce_policy" {
@@ -32,6 +62,7 @@ resource "aws_s3_bucket_policy" "vpce_policy" {
         Sid       = "Access-to-specific-VPCE-only"
         Principal = "*"
         Action    = "s3:GetObject"
+        Effect    = "Allow"
         Resource  = [aws_s3_bucket.spa_bucket.arn, "${aws_s3_bucket.spa_bucket.arn}/*"]
         Condition = {
           StringEquals = {
@@ -48,7 +79,8 @@ resource "aws_s3_bucket_policy" "vpce_policy" {
 resource "aws_iam_role" "task_execution_role" {
   name = "${var.appid}_execution_role"
   managed_policy_arns = [
-    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy",
+    "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
   ]
 
   assume_role_policy = jsonencode({
@@ -97,7 +129,7 @@ resource "aws_iam_role" "task_role" {
         Effect = "Allow"
         Sid    = "ecs"
         Principal = {
-          Service = "ecs.amazonaws.com"
+          Service = "ecs-tasks.amazonaws.com"
         }
       }
     ]
@@ -108,7 +140,7 @@ resource "aws_iam_role" "task_role" {
 
 #Task Definition
 resource "aws_ecs_task_definition" "proxy_task" {
-  family                   = "proxy"
+  family                   = local.task_family
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = 1024
@@ -117,7 +149,7 @@ resource "aws_ecs_task_definition" "proxy_task" {
   execution_role_arn       = aws_iam_role.task_execution_role.arn
   container_definitions = jsonencode([
     {
-      name  = "${var.appid}_spa_proxy"
+      name  = local.container_name
       image = "nginxinc/nginx-s3-gateway:latest"
       environment = [
         {
@@ -159,15 +191,16 @@ resource "aws_ecs_task_definition" "proxy_task" {
         },
         {
           name  = "S3_SERVER"
-          value = replace(aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
+          value = replace(data.aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-create-group = "true"
-          awslogs-group        = "${appid}-proxy-logs"
-          awslogs-region       = var.region
+          awslogs-create-group  = "true"
+          awslogs-group         = "${var.appid}-proxy-logs"
+          awslogs-region        = var.region
+          awslogs-stream-prefix = var.appid
         }
       }
 
@@ -188,15 +221,14 @@ resource "aws_security_group" "proxy_sg" {
   name_prefix = "${var.appid}-proxy"
   vpc_id      = var.vpc_id
 
-  ingress = [
- {
+  ingress {
     protocol        = -1
     description     = "Ingress to proxy"
     from_port       = 0
-    self = true
+    self            = true
     security_groups = [aws_security_group.lb_sg.id]
     to_port         = 0
-  }]
+  }
   egress {
     from_port   = 0
     to_port     = 0
