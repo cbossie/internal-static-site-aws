@@ -13,3 +13,11 @@ output "vpc_endpoint_id" {
   value       = aws_vpc_endpoint.s3_endpoint.id
   description = "VPC Endpoint ID"
 }
+
+output "subnets" {
+  
+  value = {
+    private = local.private_subnets
+    public = local.public_subnets
+  }
+}

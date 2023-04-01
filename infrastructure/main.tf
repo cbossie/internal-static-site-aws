@@ -3,7 +3,6 @@ terraform {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 4.0"
-
     }
   }
   backend "s3" {
@@ -15,7 +14,7 @@ provider "aws" {
   default_tags {
     tags = {
       Environment = var.environment
-      System      = "internal SPA"
+      System      = "Internal SPA"
     }
   }
 }
@@ -24,18 +23,16 @@ provider "aws" {
 locals {
   azs             = ["${var.region}a", "${var.region}b", "${var.region}c"]
   s3_service      = "com.amazonaws.${var.region}.s3"
-  cidr            = "10.0.0.0/16"
-  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
-  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+  private_subnets = slice(cidrsubnets(var.cidr_block, 8, 8, 8, 8, 8, 8), 0, 3)
+  public_subnets  = slice(cidrsubnets(var.cidr_block, 8, 8, 8, 8, 8, 8), 3, 6)
 }
 
 
 module "vpc" {
   source = "terraform-aws-modules/vpc/aws"
-
   azs                  = local.azs
-  name                 = "proxy-vpc"
-  cidr                 = local.cidr
+  name                 = "${var.appid}-vpc"
+  cidr                 = var.cidr_block
   private_subnets      = local.private_subnets
   public_subnets       = local.public_subnets
   enable_nat_gateway   = true
@@ -46,7 +43,7 @@ module "vpc" {
 
 
 resource "aws_security_group" "vpce_sg" {
-  name_prefix = "vpce_sg"
+  name_prefix = "${var.appid}_vpce_sg-"
   vpc_id      = module.vpc.vpc_id
   ingress {
     protocol    = -1
@@ -83,16 +80,19 @@ resource "aws_acm_certificate" "lb_cert" {
 }
 
 resource "aws_route53_zone" "privatezone" {
-  name = "samplesite.local"
+  name = var.domain_name
   vpc {
     vpc_id = module.vpc.vpc_id
   }
 }
 
+
+
+
 #Creeate the SPA proxy
 module "spa_proxy" {
   source                   = "./modules/internal-spa"
-  appid                    = "spa"
+  appid                    = var.appid
   vpc_id                   = module.vpc.vpc_id
   subnets                  = module.vpc.private_subnets
   certificate_arn          = aws_acm_certificate.lb_cert.arn
@@ -106,5 +106,8 @@ module "spa_proxy" {
     aws_vpc_endpoint.s3_endpoint,
     module.vpc
   ]
-
 }
+
+
+
+

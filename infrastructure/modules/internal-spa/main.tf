@@ -9,7 +9,8 @@ data "aws_vpc" "proxy_vpc" {
 
 locals {
   task_family = "${var.appid}-task"
-  container_name = "${var.appid}-spa-proxy"
+  container_name = "${var.appid}-proxy"
+  service_name = "${var.appid}-proxy-service"
 }
 
 module "ecs_cluster" {
@@ -20,24 +21,83 @@ module "ecs_cluster" {
 
 resource "aws_ecs_service" "proxy_service" {
   launch_type          = "FARGATE"
-  name                 = "${var.appid}-proxy-service"
+  name                 = local.service_name
   cluster              = module.ecs_cluster.cluster_id
   task_definition      = aws_ecs_task_definition.proxy_task.arn
-  desired_count        = 3
+  desired_count        = 2
   force_new_deployment = true
   network_configuration {
     security_groups  = [aws_security_group.proxy_sg.id]
     subnets          = var.subnets
     assign_public_ip = false
   }
-
+  lifecycle {
+    ignore_changes = [desired_count]
+  }
   load_balancer {
     target_group_arn = aws_lb_target_group.proxy.arn
     container_name   = local.container_name
     container_port   = 80
   }
-
 }
+
+#Service Auto Scaling
+resource "aws_appautoscaling_target" "proxy_ecs_target" {
+  max_capacity       = 4
+  min_capacity       = 0
+  resource_id        = "service/${module.ecs_cluster.cluster_name}/${local.service_name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+
+resource "aws_appautoscaling_policy" "memory_scaling" {
+  name               = "memory_scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.proxy_ecs_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.proxy_ecs_target.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.proxy_ecs_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+
+    target_value       = 80
+  }
+}
+
+resource "aws_appautoscaling_policy" "cpu_scaling" {
+  name = "cpu_scaling"
+  policy_type = "TargetTrackingScaling"
+  resource_id = aws_appautoscaling_target.proxy_ecs_target.resource_id
+  scalable_dimension = aws_appautoscaling_target.proxy_ecs_target.scalable_dimension
+  service_namespace = aws_appautoscaling_target.proxy_ecs_target.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+    target_value = 60
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 resource "aws_s3_bucket" "spa_bucket" {
   bucket_prefix = var.appid
@@ -143,8 +203,8 @@ resource "aws_ecs_task_definition" "proxy_task" {
   family                   = local.task_family
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = 1024
-  memory                   = 2048
+  cpu                      = 256
+  memory                   = 512
   task_role_arn            = aws_iam_role.task_role.arn
   execution_role_arn       = aws_iam_role.task_execution_role.arn
   container_definitions = jsonencode([
@@ -172,7 +232,6 @@ resource "aws_ecs_task_definition" "proxy_task" {
           name  = "S3_SERVER_PORT"
           value = "443"
         },
-
         {
           name  = "S3_SERVER_PROTO"
           value = "https"
