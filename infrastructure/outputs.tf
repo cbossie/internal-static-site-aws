@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value       = module.vpc.vpc_id
+  value       = one(module.vpc).vpc_id
   description = "The Created VPC"
 }
 
@@ -15,9 +15,9 @@ output "vpc_endpoint_id" {
 }
 
 output "subnets" {
-  
+
   value = {
     private = local.private_subnets
-    public = local.public_subnets
+    public  = local.public_subnets
   }
-}
+} 

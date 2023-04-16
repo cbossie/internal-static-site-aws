@@ -1,8 +1,9 @@
+
+#General Configuration
 variable "appid" {
   type        = string
   description = "The application identifier of this. This will be used as a prefix / tag for created resources"
 }
-
 variable "vpc_id" {
   type        = string
   description = "The ID of the VPC in which the SPA will be created"
