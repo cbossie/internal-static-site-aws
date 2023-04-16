@@ -1,5 +1,5 @@
 output "vpc_id" {
-  value       = one(module.vpc).vpc_id
+  value       = var.use_existing_vpc ? var.vpc_id : one(module.vpc).vpc_id
   description = "The Created VPC"
 }
 

@@ -35,6 +35,7 @@ resource "aws_security_group" "vpce_sg" {
   name_prefix = "${var.appid}_vpce_sg-"
   vpc_id      = local.vpc_id
   ingress {
+    self = true
     protocol    = -1
     description = "Ingress to LB"
     from_port   = 0
@@ -59,7 +60,6 @@ resource "aws_vpc_endpoint" "s3_endpoint" {
   security_group_ids = [aws_security_group.vpce_sg.id]
   subnet_ids         = local.private_subnets
 }
-
 
 
 resource "aws_route53_zone" "privatezone" {
