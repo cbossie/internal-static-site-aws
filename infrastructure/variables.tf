@@ -53,6 +53,12 @@ variable "existing_subnets" {
   default     = []
 }
 
+variable "existing_subnets_are_public" {
+  type        = bool
+  description = "if you are deploying to public subnets, set this to true. Even though the service will be internal only, it will allow ECS to retrieve container images"
+  default     = false
+}
+
 #NEW VPC SETTINGS
 
 # If you create a vpc then you must use this

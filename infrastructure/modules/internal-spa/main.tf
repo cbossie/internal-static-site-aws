@@ -29,7 +29,7 @@ resource "aws_ecs_service" "proxy_service" {
   network_configuration {
     security_groups  = [aws_security_group.proxy_sg.id]
     subnets          = var.subnets
-    assign_public_ip = false
+    assign_public_ip = var.use_ecs_public_ip
   }
   lifecycle {
     ignore_changes = [desired_count]
@@ -82,23 +82,6 @@ resource "aws_appautoscaling_policy" "cpu_scaling" {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 resource "aws_s3_bucket" "spa_bucket" {
   bucket_prefix = var.appid
   force_destroy = true
@@ -133,7 +116,6 @@ resource "aws_s3_bucket_policy" "vpce_policy" {
     ]
   })
 }
-
 
 # The role for the ECS execution
 resource "aws_iam_role" "task_execution_role" {

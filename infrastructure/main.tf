@@ -19,6 +19,9 @@ provider "aws" {
   }
 }
 
+#################################################
+# Private SPA
+#################################################
 resource "aws_acm_certificate" "lb_cert" {
   private_key      = file("cert/sample-private-key.pem")
   certificate_body = file("cert/sample-certificate.pem")
@@ -36,6 +39,7 @@ module "spa_proxy" {
   region                   = var.region
   s3_interface_endpoint_id = local.s3_endpoint
   private_zone_id          = aws_route53_zone.privatezone.id
+  use_ecs_public_ip        = var.existing_subnets_are_public
   depends_on = [
     aws_acm_certificate.lb_cert,
     aws_route53_zone.privatezone,
@@ -46,4 +50,9 @@ module "spa_proxy" {
 
 
 
-
+#################################################
+# Public SPA
+#################################################
+module "public_spa" {
+  source = "./modules/cloudfront-spa"
+}

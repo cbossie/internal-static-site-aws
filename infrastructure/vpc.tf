@@ -35,7 +35,7 @@ resource "aws_security_group" "vpce_sg" {
   name_prefix = "${var.appid}_vpce_sg-"
   vpc_id      = local.vpc_id
   ingress {
-    self = true
+    self        = true
     protocol    = -1
     description = "Ingress to LB"
     from_port   = 0

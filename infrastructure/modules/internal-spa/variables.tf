@@ -39,3 +39,9 @@ variable "private_zone_id" {
   type        = string
   description = "Route53 Private zone"
 }
+
+variable "use_ecs_public_ip" {
+  type = bool
+  description = "Whether or not to give the ECS services a public IP. If they are deployed to a public subnet, they will need this"
+  default = false
+}
