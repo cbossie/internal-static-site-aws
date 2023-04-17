@@ -25,7 +25,7 @@ output "internal_site_url" {
 
 output "external_site_url" {
   description = "The external site's Cloudfront distribution URL"
-  value = module.public_spa.cf_url
+  value = "https://${module.public_spa.cf_url}"
 }
 
 output "external_site_bucket" {
