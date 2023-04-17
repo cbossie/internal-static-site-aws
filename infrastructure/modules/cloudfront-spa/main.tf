@@ -12,9 +12,7 @@ resource "aws_s3_object" "index_file" {
   source = "${path.module}/assets/index.html"
   bucket = aws_s3_bucket.spa_files_bucket.id
   key    = "index.html"
-  metadata = {
-    "content-type" = "text/html"
-  }
+  content_type = "text/html"
 }
 
 
@@ -96,3 +94,10 @@ resource "aws_cloudfront_distribution" "spa_distribution" {
   }
 
 }
+
+
+#Web Application Firewall
+
+
+
+
