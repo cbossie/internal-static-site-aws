@@ -65,6 +65,9 @@ resource "aws_appautoscaling_policy" "memory_scaling" {
 
     target_value       = 80
   }
+  depends_on = [
+    aws_ecs_service.proxy_service    
+  ]
 }
 
 resource "aws_appautoscaling_policy" "cpu_scaling" {
@@ -80,6 +83,9 @@ resource "aws_appautoscaling_policy" "cpu_scaling" {
     }
     target_value = 60
   }
+   depends_on = [
+    aws_ecs_service.proxy_service    
+  ]
 }
 
 resource "aws_s3_bucket" "spa_bucket" {
