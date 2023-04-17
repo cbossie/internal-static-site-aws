@@ -97,6 +97,7 @@ resource "aws_s3_object" "test_file" {
   source = "${path.module}/assets/hc.html"
   bucket = aws_s3_bucket.spa_bucket.id
   key = "hc.html"
+  content_type = "text/html"
 }
 
 resource "aws_s3_bucket_policy" "vpce_policy" {
