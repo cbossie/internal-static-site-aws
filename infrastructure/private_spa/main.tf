@@ -48,11 +48,3 @@ module "spa_proxy" {
   ]
 }
 
-
-
-#################################################
-# Public SPA
-#################################################
-module "public_spa" {
-  source = "./modules/cloudfront-spa"
-}
