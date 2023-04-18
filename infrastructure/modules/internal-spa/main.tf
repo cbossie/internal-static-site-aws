@@ -240,6 +240,10 @@ resource "aws_ecs_task_definition" "proxy_task" {
         {
           name  = "S3_SERVER"
           value = replace(data.aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
+        },
+        {
+          name = "PROXY_CACHE_VALID_OK"
+          value = "10"
         }
       ]
       logConfiguration = {
