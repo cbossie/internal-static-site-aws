@@ -9,9 +9,9 @@ resource "aws_s3_bucket" "spa_files_bucket" {
 }
 
 resource "aws_s3_object" "index_file" {
-  source = "${path.module}/assets/index.html"
-  bucket = aws_s3_bucket.spa_files_bucket.id
-  key    = "index.html"
+  source       = "${path.module}/assets/index.html"
+  bucket       = aws_s3_bucket.spa_files_bucket.id
+  key          = "index.html"
   content_type = "text/html"
 }
 
@@ -58,7 +58,7 @@ resource "aws_cloudfront_distribution" "spa_distribution" {
   origin {
     domain_name              = aws_s3_bucket.spa_files_bucket.bucket_regional_domain_name
     origin_access_control_id = aws_cloudfront_origin_access_control.s3_access_policy.id
-    origin_id = local.s3_origin_id
+    origin_id                = local.s3_origin_id
   }
 
   restrictions {
@@ -79,7 +79,6 @@ resource "aws_cloudfront_distribution" "spa_distribution" {
     target_origin_id       = local.s3_origin_id
     forwarded_values {
       query_string = false
-
       cookies {
         forward = "none"
       }
@@ -94,10 +93,5 @@ resource "aws_cloudfront_distribution" "spa_distribution" {
   }
 
 }
-
-
-#Web Application Firewall
-
-
 
 

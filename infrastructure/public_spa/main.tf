@@ -21,6 +21,6 @@ provider "aws" {
 # Public SPA
 #################################################
 module "public_spa" {
-  source = "../modules/cloudfront-spa"
+  source           = "../modules/cloudfront-spa"
   s3_bucket_prefix = var.s3_bucket_prefix
 }
