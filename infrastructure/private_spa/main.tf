@@ -30,7 +30,7 @@ resource "aws_acm_certificate" "lb_cert" {
 #Creeate the SPA proxy
 #Data comes from the "vpc.tf" file
 module "spa_proxy" {
-  source                   = "./modules/internal-spa"
+  source                   = "../modules/internal-spa"
   appid                    = var.appid
   vpc_id                   = local.vpc_id
   subnets                  = local.private_subnets
