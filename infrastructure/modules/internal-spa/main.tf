@@ -8,9 +8,9 @@ data "aws_vpc" "proxy_vpc" {
 }
 
 locals {
-  task_family = "${var.appid}-task"
+  task_family    = "${var.appid}-task"
   container_name = "${var.appid}-proxy"
-  service_name = "${var.appid}-proxy-service"
+  service_name   = "${var.appid}-proxy-service"
 }
 
 module "ecs_cluster" {
@@ -48,6 +48,9 @@ resource "aws_appautoscaling_target" "proxy_ecs_target" {
   resource_id        = "service/${module.ecs_cluster.cluster_name}/${local.service_name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
+  depends_on = [
+    aws_ecs_service.proxy_service
+  ]
 }
 
 
@@ -63,19 +66,19 @@ resource "aws_appautoscaling_policy" "memory_scaling" {
       predefined_metric_type = "ECSServiceAverageMemoryUtilization"
     }
 
-    target_value       = 80
+    target_value = 80
   }
   depends_on = [
-    aws_ecs_service.proxy_service    
+    aws_ecs_service.proxy_service
   ]
 }
 
 resource "aws_appautoscaling_policy" "cpu_scaling" {
-  name = "cpu_scaling"
-  policy_type = "TargetTrackingScaling"
-  resource_id = aws_appautoscaling_target.proxy_ecs_target.resource_id
+  name               = "cpu_scaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.proxy_ecs_target.resource_id
   scalable_dimension = aws_appautoscaling_target.proxy_ecs_target.scalable_dimension
-  service_namespace = aws_appautoscaling_target.proxy_ecs_target.service_namespace
+  service_namespace  = aws_appautoscaling_target.proxy_ecs_target.service_namespace
 
   target_tracking_scaling_policy_configuration {
     predefined_metric_specification {
@@ -83,20 +86,20 @@ resource "aws_appautoscaling_policy" "cpu_scaling" {
     }
     target_value = 60
   }
-   depends_on = [
-    aws_ecs_service.proxy_service    
+  depends_on = [
+    aws_ecs_service.proxy_service
   ]
 }
 
 resource "aws_s3_bucket" "spa_bucket" {
-  bucket_prefix = var.appid
+  bucket_prefix = var.bucket_prefix
   force_destroy = true
 }
 
 resource "aws_s3_object" "test_file" {
-  source = "${path.module}/assets/hc.html"
-  bucket = aws_s3_bucket.spa_bucket.id
-  key = "hc.html"
+  source       = "${path.module}/assets/hc.html"
+  bucket       = aws_s3_bucket.spa_bucket.id
+  key          = "hc.html"
   content_type = "text/html"
 }
 
@@ -242,7 +245,7 @@ resource "aws_ecs_task_definition" "proxy_task" {
           value = replace(data.aws_vpc_endpoint.s3_endpoint.dns_entry[0].dns_name, "*", "bucket")
         },
         {
-          name = "PROXY_CACHE_VALID_OK"
+          name  = "PROXY_CACHE_VALID_OK"
           value = "10"
         }
       ]

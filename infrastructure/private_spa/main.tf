@@ -40,6 +40,7 @@ module "spa_proxy" {
   s3_interface_endpoint_id = local.s3_endpoint
   private_zone_id          = aws_route53_zone.privatezone.id
   use_ecs_public_ip        = var.existing_subnets_are_public
+  bucket_prefix            = var.bucket_prefix
   depends_on = [
     aws_acm_certificate.lb_cert,
     aws_route53_zone.privatezone,

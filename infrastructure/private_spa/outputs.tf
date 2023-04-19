@@ -10,15 +10,15 @@ output "vpc_endpoints" {
 
 output "internal_site_bucket" {
   description = "The bucket that the internal SPA will read from"
-  value = module.spa_proxy.spa_bucket
+  value       = module.spa_proxy.spa_bucket
 }
 
 output "load_balancer_url" {
   description = "The load balancer URL (for internal use only)"
-  value = module.spa_proxy.load_balancer_url
+  value       = module.spa_proxy.load_balancer_url
 }
 
 output "internal_site_url" {
   description = "The internal site URL"
-  value = "https://www.${var.domain_name}"
+  value       = "https://www.${var.domain_name}"
 }

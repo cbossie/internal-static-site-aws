@@ -41,7 +41,13 @@ variable "private_zone_id" {
 }
 
 variable "use_ecs_public_ip" {
-  type = bool
+  type        = bool
   description = "Whether or not to give the ECS services a public IP. If they are deployed to a public subnet, they will need this"
-  default = false
+  default     = false
+}
+
+variable "bucket_prefix" {
+  type        = string
+  description = "The bucket prefix for the s3 bucket hosting the site"
+  default     = "private-spa-"
 }
