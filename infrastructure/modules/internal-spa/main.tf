@@ -44,7 +44,7 @@ resource "aws_ecs_service" "proxy_service" {
 #Service Auto Scaling
 resource "aws_appautoscaling_target" "proxy_ecs_target" {
   max_capacity       = 4
-  min_capacity       = 0
+  min_capacity       = 2
   resource_id        = "service/${module.ecs_cluster.cluster_name}/${local.service_name}"
   scalable_dimension = "ecs:service:DesiredCount"
   service_namespace  = "ecs"
